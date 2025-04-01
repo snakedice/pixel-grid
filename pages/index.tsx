@@ -1,10 +1,12 @@
-// UI-Only Demo Version of 100 Million Token Homepage with Burnie Logo + 100x100 Grid
+// Burnie's Pixel Burn — Phantom + Token UI
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const GRID_SIZE = 100; // 100x100 = 10,000 squares
-const PIXEL_COST_TOKENS = 10000; // cost per square in tokens
+const PIXEL_COST_TOKENS = 10000;
 const MAX_SQUARES = 25;
+const TOKEN_MINT = "DXrz89vHegFQndREph3HTLy2V5RXGus6TJhuvi9Xpump";
+const BURN_ADDRESS = "11111111111111111111111111111111";
 const COLORS = ["bg-pink-500", "bg-yellow-400", "bg-purple-400", "bg-blue-400", "bg-red-400"];
 
 export default function PixelGrid() {
@@ -14,22 +16,41 @@ export default function PixelGrid() {
   const [listPrices, setListPrices] = useState({});
   const [images, setImages] = useState({});
 
+  useEffect(() => {
+    if (window.solana?.isPhantom) {
+      window.solana.on("connect", () => {
+        setWallet(window.solana.publicKey.toString());
+      });
+    }
+  }, []);
+
+  const connectWallet = async () => {
+    try {
+      const response = await window.solana.connect();
+      setWallet(response.publicKey.toString());
+    } catch (err) {
+      console.error("Wallet connection failed", err);
+    }
+  };
+
+  const buyPixels = async () => {
+    if (!wallet || !window.solana) {
+      alert("Please connect your wallet first");
+      return;
+    }
+
+    const totalCost = selected.length * PIXEL_COST_TOKENS;
+    alert(`This is a placeholder. You would send ${totalCost} PXB to the burn address.`);
+    setOwned([...owned, ...selected]);
+    setSelected([]);
+  };
+
   const handlePixelClick = (index) => {
     if (selected.includes(index)) {
       setSelected(selected.filter((i) => i !== index));
     } else if (selected.length < MAX_SQUARES) {
       setSelected([...selected, index]);
     }
-  };
-
-  const connectWallet = () => {
-    setWallet("DemoWallet123...abc");
-  };
-
-  const buyPixels = () => {
-    setOwned([...owned, ...selected]);
-    setSelected([]);
-    alert(`Pretend to send ${selected.length * PIXEL_COST_TOKENS} TOKENS for ${selected.length} squares (burned to burn address).`);
   };
 
   const sellPixel = (index) => {
@@ -53,25 +74,21 @@ export default function PixelGrid() {
 
   return (
     <div className="p-6 space-y-6 font-sans bg-gradient-to-br from-yellow-100 to-purple-100 min-h-screen flex flex-col">
-      {/* Fun Banner */}
+      {/* Banner */}
       <div className="text-center py-8 bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 rounded-2xl shadow-xl relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://upload.wikimedia.org/wikipedia/commons/4/4a/Solana_logo.png')] bg-center bg-contain bg-no-repeat" />
+        <div className="absolute inset-0 opacity-10 bg-[url('/burnie-logo-glow.png')] bg-center bg-contain bg-no-repeat" />
         <div className="z-10 relative flex flex-col items-center gap-2">
-          <img
-            src="https://cdn.snakedice.com/burnie/burnie-logo-glow.png"
-            alt="Burnie the Snake Logo"
-            className="w-16 h-16"
-          />
-          <h1 className="text-5xl font-extrabold text-white drop-shadow-xl">
-            🐍 100 Million Token Homepage
+          <img src="/burnie-logo-glow.png" alt="Burnie the Snake Logo" className="w-20 h-20" />
+          <h1 className="text-4xl font-extrabold text-white drop-shadow-xl">
+            🔥 Burnie's Pixel Burn
           </h1>
-          <p className="mt-2 text-white text-lg font-medium">
-            Buy, flex, and burn tokens to own a piece of pixel history.
+          <p className="mt-2 text-white text-md font-medium">
+            Use $PXB to burn your way into Solana history — one pixel at a time.
           </p>
         </div>
       </div>
 
-      {/* Wallet + Status */}
+      {/* Wallet Connection */}
       <div className="text-center">
         <p className="mb-2">{wallet ? `Connected: ${wallet}` : "Not connected"}</p>
         <button
@@ -82,7 +99,7 @@ export default function PixelGrid() {
         </button>
       </div>
 
-      {/* Grid */}
+      {/* Pixel Grid */}
       <div className="flex justify-center overflow-auto">
         <div className="grid" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
           {[...Array(GRID_SIZE * GRID_SIZE)].map((_, i) => (
@@ -130,29 +147,25 @@ export default function PixelGrid() {
         </div>
       </div>
 
-      {/* Buy Button + Count */}
+      {/* Purchase Area */}
       <div className="text-center space-y-2">
         <p className="text-lg font-medium">
-          Selected Squares: {selected.length} / {MAX_SQUARES} (Cost: {selected.length * PIXEL_COST_TOKENS} tokens)
+          Selected Squares: {selected.length} / {MAX_SQUARES} (Cost: {selected.length * PIXEL_COST_TOKENS} $PXB)
         </p>
         <button
           disabled={selected.length === 0}
           onClick={buyPixels}
           className="px-6 py-3 bg-green-500 text-white font-semibold rounded-full shadow hover:bg-green-600 disabled:opacity-50 transition"
         >
-          Buy Selected
+          Burn Tokens & Buy
         </button>
       </div>
 
       {/* Footer */}
       <footer className="text-center text-sm text-gray-600 pt-10 pb-4">
         <div className="flex flex-col items-center">
-          <img
-            src="https://cdn.snakedice.com/burnie/burnie-icon-sm.png"
-            alt="Burnie Icon"
-            className="w-5 h-5 mb-1 opacity-70"
-          />
-          <span>©2025 100 Million Token Homepage, by SnakeDice DAO</span>
+          <img src="/burnie-icon-sm.png" alt="Burnie Icon" className="w-5 h-5 mb-1 opacity-70" />
+          <span>©2025 Burnie's Pixel Burn — Powered by SnakeDice DAO</span>
         </div>
       </footer>
     </div>
