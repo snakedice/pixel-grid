@@ -173,3 +173,4 @@ export default function PixelGrid() {
     </div>
   );
 }
+// Rebuild for Vercel
