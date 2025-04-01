@@ -1,9 +1,11 @@
+/// <reference path="../solana.d.ts" />
+
 // Burnie's Pixel Burn — Phantom + Token UI
 
 import { useEffect, useState } from "react";
 import { Connection, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
 import { getAssociatedTokenAddress, createTransferInstruction } from "@solana/spl-token";
-import "../types/solana.d.ts";
+import "../solana.d.ts";
 
 const GRID_SIZE = 100;
 const PIXEL_COST_TOKENS = 10000;
@@ -37,7 +39,12 @@ export default function PixelGrid() {
 
   const connectWallet = async () => {
     try {
+      if (!window.solana) {
+        alert("Phantom Wallet not found");
+        return;
+      }
       const response = await window.solana.connect();
+      
       const pubkey = new PublicKey(response.publicKey?.toString() || "");
       setWallet(pubkey.toBase58());
       fetchBalance(pubkey);

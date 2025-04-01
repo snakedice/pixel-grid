@@ -1,7 +1,3 @@
-// solana.d.ts
-
-import type { Transaction } from "@solana/web3.js";
-
 interface SolanaProvider {
   isPhantom?: boolean;
   publicKey?: {
@@ -9,7 +5,7 @@ interface SolanaProvider {
   };
   connect: () => Promise<{ publicKey: { toString(): string } }>;
   on: (event: string, handler: () => void) => void;
-  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+  signTransaction: (tx: import("@solana/web3.js").Transaction) => Promise<import("@solana/web3.js").Transaction>;
 }
 
 interface Window {
