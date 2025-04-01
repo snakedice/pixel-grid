@@ -1,5 +1,3 @@
-
-
 // Burnie's Pixel Burn — Phantom + Token UI
 
 import { useEffect, useState } from "react";
@@ -19,20 +17,16 @@ export default function PixelGrid() {
   const [images, setImages] = useState({});
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const provider = (window as any).solana;
-      if (provider?.isPhantom) {
-        provider.on("connect", () => {
-          setWallet(provider.publicKey.toString());
-        });
-      }
+    if (typeof window !== "undefined" && window.solana && window.solana.isPhantom) {
+      window.solana.on("connect", () => {
+        setWallet(window.solana.publicKey.toString());
+      });
     }
   }, []);
 
   const connectWallet = async () => {
     try {
-      const provider = (window as any).solana;
-      const response = await provider.connect();
+      const response = await window.solana.connect();
       setWallet(response.publicKey.toString());
     } catch (err) {
       console.error("Wallet connection failed", err);
@@ -40,7 +34,7 @@ export default function PixelGrid() {
   };
 
   const buyPixels = async () => {
-    if (!wallet || !(window as any).solana) {
+    if (!wallet || !window.solana) {
       alert("Please connect your wallet first");
       return;
     }
