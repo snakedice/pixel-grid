@@ -27,7 +27,7 @@ export default function PixelGrid() {
   useEffect(() => {
     if (typeof window !== "undefined" && window.solana?.isPhantom) {
       window.solana.on("connect", () => {
-        const provider = window.solana!;
+        const provider = window.solana as SolanaProvider;
         const pubkey = new PublicKey(provider.publicKey?.toString() || "");
         setWallet(pubkey.toBase58());
         fetchBalance(pubkey);

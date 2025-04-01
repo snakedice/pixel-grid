@@ -1,16 +1,17 @@
 // solana.d.ts
-export {};
 
-declare global {
-  interface Window {
-    solana?: {
-      isPhantom?: boolean;
-      publicKey?: {
-        toString(): string;
-      };
-      connect: () => Promise<{ publicKey: { toString(): string } }>;
-      on: (event: string, handler: () => void) => void;
-      signTransaction: (tx: import("@solana/web3.js").Transaction) => Promise<import("@solana/web3.js").Transaction>;
-    };
-  }
+import type { Transaction } from "@solana/web3.js";
+
+interface SolanaProvider {
+  isPhantom?: boolean;
+  publicKey?: {
+    toString(): string;
+  };
+  connect: () => Promise<{ publicKey: { toString(): string } }>;
+  on: (event: string, handler: () => void) => void;
+  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+}
+
+interface Window {
+  solana?: SolanaProvider;
 }
