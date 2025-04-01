@@ -1,13 +1,16 @@
-interface SolanaProvider {
-  isPhantom?: boolean;
-  publicKey: import("@solana/web3.js").PublicKey;
-  connect: () => Promise<{ publicKey: import("@solana/web3.js").PublicKey }>;
-  on: (event: string, callback: () => void) => void;
-  signTransaction: (transaction: import("@solana/web3.js").Transaction) => Promise<import("@solana/web3.js").Transaction>;
-}
-
-interface Window {
-  solana?: SolanaProvider;
-}
-
 export {};
+
+declare global {
+  interface Window {
+    solana?: {
+      isPhantom?: boolean;
+      publicKey?: {
+        toString(): string;
+        toBytes(): Uint8Array;
+      };
+      connect: () => Promise<{ publicKey: { toString(): string; toBytes(): Uint8Array } }>;
+      on: (event: string, handler: () => void) => void;
+      signTransaction: (tx: any) => Promise<any>;
+    };
+  }
+}
