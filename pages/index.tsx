@@ -1,29 +1,33 @@
-
-
-
-
 // Burnie's Pixel Burn — Phantom + Token UI
 
 import { useEffect, useState } from "react";
+import { Connection, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
+import { getAssociatedTokenAddress, createTransferInstruction } from "@solana/spl-token";
 
 const GRID_SIZE = 100; // 100x100 = 10,000 squares
 const PIXEL_COST_TOKENS = 10000;
 const MAX_SQUARES = 25;
-const TOKEN_MINT = "DXrz89vHegFQndREph3HTLy2V5RXGus6TJhuvi9Xpump";
-const BURN_ADDRESS = "11111111111111111111111111111111";
+const TOKEN_MINT = new PublicKey("DXrz89vHegFQndREph3HTLy2V5RXGus6TJhuvi9Xpump");
+const BURN_ADDRESS = new PublicKey("11111111111111111111111111111111");
+const DEV_FEE_ADDRESS = new PublicKey("GuvMYgVSFHBV3UgaAd8rnb23ofzZqUBJP3r8zBbundyC");
 const COLORS = ["bg-pink-500", "bg-yellow-400", "bg-purple-400", "bg-blue-400", "bg-red-400"];
+const RPC_URL = "https://api.mainnet-beta.solana.com";
 
 export default function PixelGrid() {
   const [selected, setSelected] = useState([]);
   const [owned, setOwned] = useState([]);
   const [wallet, setWallet] = useState(null);
-  const [listPrices, setListPrices] = useState({});
-  const [images, setImages] = useState({});
+  const [balance, setBalance] = useState(null);
+  const [colorIndex, setColorIndex] = useState(0);
+  const [xHandle, setXHandle] = useState("");
+
+  const connection = new Connection(RPC_URL);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.solana && window.solana.isPhantom) {
+    if (typeof window !== "undefined" && window.solana?.isPhantom) {
       window.solana.on("connect", () => {
         setWallet(window.solana.publicKey.toString());
+        fetchBalance(window.solana.publicKey);
       });
     }
   }, []);
@@ -32,8 +36,26 @@ export default function PixelGrid() {
     try {
       const response = await window.solana.connect();
       setWallet(response.publicKey.toString());
+      fetchBalance(response.publicKey);
     } catch (err) {
       console.error("Wallet connection failed", err);
+    }
+  };
+
+  const fetchBalance = async (publicKey) => {
+    try {
+      const accounts = await connection.getTokenAccountsByOwner(publicKey, {
+        mint: TOKEN_MINT,
+      });
+      let total = 0;
+      for (const acct of accounts.value) {
+        const data = await connection.getParsedAccountInfo(acct.pubkey);
+        const parsed = data.value?.data?.parsed?.info?.tokenAmount?.uiAmount;
+        total += parsed || 0;
+      }
+      setBalance(total);
+    } catch (err) {
+      console.error("Failed to fetch balance", err);
     }
   };
 
@@ -42,14 +64,49 @@ export default function PixelGrid() {
       alert("Please connect your wallet first");
       return;
     }
+    if (!xHandle.startsWith("https://x.com/")) {
+      alert("Please enter a valid X.com profile URL");
+      return;
+    }
+
+    const provider = window.solana;
+    const fromPubkey = provider.publicKey;
+    const associatedAddress = await getAssociatedTokenAddress(TOKEN_MINT, fromPubkey);
 
     const totalCost = selected.length * PIXEL_COST_TOKENS;
-    alert(`This is a placeholder. You would send ${totalCost} PXB to the burn address.`);
-    setOwned([...owned, ...selected]);
-    setSelected([]);
+    const devFeeLamports = selected.length * 0.005 * 1e9; // Convert SOL to lamports
+
+    try {
+      const burnIx = createTransferInstruction(
+        associatedAddress,
+        BURN_ADDRESS,
+        fromPubkey,
+        totalCost,
+        [],
+        TOKEN_MINT
+      );
+
+      const devIx = SystemProgram.transfer({
+        fromPubkey,
+        toPubkey: DEV_FEE_ADDRESS,
+        lamports: Math.round(devFeeLamports),
+      });
+
+      const tx = new Transaction().add(burnIx, devIx);
+      const sig = await provider.signAndSendTransaction(tx);
+      await connection.confirmTransaction(sig);
+
+      setOwned([...owned, ...selected]);
+      setSelected([]);
+      fetchBalance(fromPubkey);
+    } catch (err) {
+      console.error("Transaction failed", err);
+      alert("Transaction failed. See console for details.");
+    }
   };
 
   const handlePixelClick = (index) => {
+    if (owned.includes(index)) return;
     if (selected.includes(index)) {
       setSelected(selected.filter((i) => i !== index));
     } else if (selected.length < MAX_SQUARES) {
@@ -57,28 +114,8 @@ export default function PixelGrid() {
     }
   };
 
-  const sellPixel = (index) => {
-    const price = prompt("Enter list price in tokens for this square:", "20000");
-    if (price) {
-      setListPrices({ ...listPrices, [index]: parseFloat(price) });
-      alert(`Listed square #${index} for ${price} tokens`);
-    }
-  };
-
-  const uploadImage = (e, index) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImages({ ...images, [index]: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   return (
     <div className="p-6 space-y-6 font-sans bg-gradient-to-br from-yellow-100 to-purple-100 min-h-screen flex flex-col">
-      {/* Banner */}
       <div className="text-center py-8 bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 rounded-2xl shadow-xl relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('/burnie-logo-glow.png')] bg-center bg-contain bg-no-repeat" />
         <div className="z-10 relative flex flex-col items-center gap-2">
@@ -92,58 +129,65 @@ export default function PixelGrid() {
         </div>
       </div>
 
-      {/* Wallet Connection */}
       <div className="text-center">
         <p className="mb-2">{wallet ? `Connected: ${wallet}` : "Not connected"}</p>
+        {wallet && <p className="text-sm text-gray-700">Balance: {balance ?? "..."} $PXB</p>}
         <button
           onClick={connectWallet}
-          className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 transition"
+          className="mt-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 transition"
         >
           {wallet ? "Connected" : "Connect Wallet"}
         </button>
       </div>
 
-      {/* Pixel Grid */}
+      <div className="text-center space-y-3">
+        <div>
+          <label className="mr-2 font-medium">Choose Color:</label>
+          <select
+            className="border rounded px-3 py-1"
+            value={colorIndex}
+            onChange={(e) => setColorIndex(Number(e.target.value))}
+          >
+            {COLORS.map((c, idx) => (
+              <option key={c} value={idx}>
+                {c.replace("bg-", "")}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mr-2 font-medium">X Account URL:</label>
+          <input
+            type="url"
+            className="border rounded px-3 py-1 w-80"
+            placeholder="https://x.com/yourhandle"
+            value={xHandle}
+            onChange={(e) => setXHandle(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="flex justify-center overflow-auto">
         <div className="grid" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
           {[...Array(GRID_SIZE * GRID_SIZE)].map((_, i) => (
             <div key={i} className="relative group">
               <div
-                onClick={() =>
-                  owned.includes(i)
-                    ? sellPixel(i)
-                    : handlePixelClick(i)
-                }
-                title={
-                  owned.includes(i)
-                    ? listPrices[i]
-                      ? `Listed: ${listPrices[i]} tokens`
-                      : "Click to list for sale"
-                    : "Click to select"
-                }
+                onClick={() => handlePixelClick(i)}
                 className={`w-4 h-4 cursor-pointer border border-white transition-all duration-200 flex items-center justify-center text-xs font-bold text-white overflow-hidden ${
                   owned.includes(i)
-                    ? "bg-black hover:brightness-110"
+                    ? COLORS[colorIndex]
                     : selected.includes(i)
-                    ? COLORS[i % COLORS.length] + " scale-110 shadow-md"
+                    ? COLORS[colorIndex] + " scale-110 shadow-md"
                     : "bg-gray-200 hover:bg-gray-300"
                 }`}
-              >
-                {images[i] ? (
-                  <img src={images[i]} alt="logo" className="w-full h-full object-cover" />
-                ) : listPrices[i] ? (
-                  "💰"
-                ) : (
-                  ""
-                )}
-              </div>
-              {owned.includes(i) && (
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => uploadImage(e, i)}
-                  className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
-                  title="Upload image"
+                title={owned.includes(i) ? xHandle : "Click to select"}
+              ></div>
+              {owned.includes(i) && xHandle && (
+                <a
+                  href={xHandle}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute inset-0"
                 />
               )}
             </div>
@@ -151,10 +195,9 @@ export default function PixelGrid() {
         </div>
       </div>
 
-      {/* Purchase Area */}
       <div className="text-center space-y-2">
         <p className="text-lg font-medium">
-          Selected Squares: {selected.length} / {MAX_SQUARES} (Cost: {selected.length * PIXEL_COST_TOKENS} $PXB)
+          Selected Squares: {selected.length} / {MAX_SQUARES} (Cost: {selected.length * PIXEL_COST_TOKENS} $PXB + {(selected.length * 0.005).toFixed(3)} SOL Dev Fee)
         </p>
         <button
           disabled={selected.length === 0}
@@ -165,7 +208,6 @@ export default function PixelGrid() {
         </button>
       </div>
 
-      {/* Footer */}
       <footer className="text-center text-sm text-gray-600 pt-10 pb-4">
         <div className="flex flex-col items-center">
           <img src="/burnie-icon-sm.png" alt="Burnie Icon" className="w-5 h-5 mb-1 opacity-70" />
