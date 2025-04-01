@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Connection, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
 import { getAssociatedTokenAddress, createTransferInstruction } from "@solana/spl-token";
-import "../solana.d.ts";
+import "../types/solana.d.ts";
 
 const GRID_SIZE = 100;
 const PIXEL_COST_TOKENS = 10000;
@@ -27,7 +27,7 @@ export default function PixelGrid() {
   useEffect(() => {
     if (typeof window !== "undefined" && window.solana?.isPhantom) {
       window.solana.on("connect", () => {
-        const provider = window.solana as SolanaProvider;
+        const provider = window.solana!;
         const pubkey = new PublicKey(provider.publicKey?.toString() || "");
         setWallet(pubkey.toBase58());
         fetchBalance(pubkey);
@@ -37,7 +37,7 @@ export default function PixelGrid() {
 
   const connectWallet = async () => {
     try {
-        const response = await window.solana!.connect();
+      const response = await window.solana.connect();
       const pubkey = new PublicKey(response.publicKey?.toString() || "");
       setWallet(pubkey.toBase58());
       fetchBalance(pubkey);
