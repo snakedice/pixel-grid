@@ -1,4 +1,5 @@
-import "../types/solana"; // ✅ This forces Vercel to load your type definition
+import "../types/solana"; // ✅ ensures the solana global type is included
+
 
 // Burnie's Pixel Burn — Phantom + Token UI
 
