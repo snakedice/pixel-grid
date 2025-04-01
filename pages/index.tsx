@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { Connection, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
 import { getAssociatedTokenAddress, createTransferInstruction } from "@solana/spl-token";
+import "../types/solana";
 
-const GRID_SIZE = 100; // 100x100 = 10,000 squares
+const GRID_SIZE = 100;
 const PIXEL_COST_TOKENS = 10000;
 const MAX_SQUARES = 25;
 const TOKEN_MINT = new PublicKey("DXrz89vHegFQndREph3HTLy2V5RXGus6TJhuvi9Xpump");
@@ -26,8 +27,9 @@ export default function PixelGrid() {
   useEffect(() => {
     if (typeof window !== "undefined" && window.solana?.isPhantom) {
       window.solana.on("connect", () => {
-        setWallet(window.solana.publicKey.toString());
-        fetchBalance(new PublicKey(window.solana.publicKey.toString()));
+        const pubkey = window.solana.publicKey;
+        setWallet(pubkey.toString());
+        fetchBalance(pubkey);
       });
     }
   }, []);
@@ -36,7 +38,7 @@ export default function PixelGrid() {
     try {
       const response = await window.solana.connect();
       setWallet(response.publicKey.toString());
-      fetchBalance(new PublicKey(response.publicKey.toString()));
+      fetchBalance(response.publicKey);
     } catch (err) {
       console.error("Wallet connection failed", err);
     }
@@ -77,11 +79,11 @@ export default function PixelGrid() {
     }
 
     const provider = window.solana;
-    const fromPubkey = new PublicKey(provider.publicKey.toString());
+    const fromPubkey = provider.publicKey;
     const associatedAddress = await getAssociatedTokenAddress(TOKEN_MINT, fromPubkey);
 
     const totalCost = selected.length * PIXEL_COST_TOKENS;
-    const devFeeLamports = selected.length * 0.005 * 1e9; // Convert SOL to lamports
+    const devFeeLamports = selected.length * 0.005 * 1e9;
 
     try {
       const burnIx = createTransferInstruction(
