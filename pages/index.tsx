@@ -1,6 +1,5 @@
 /// <reference path="../types/global.d.ts" />
 
-
 // Burnie's Pixel Burn — Phantom + Token UI
 
 import { useEffect, useState } from "react";
