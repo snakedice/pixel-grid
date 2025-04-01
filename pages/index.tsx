@@ -1,4 +1,5 @@
-import "../types/solana"; // ✅ ensures the solana global type is included
+import "../types/solana"; // 👈 explicitly include the type definition
+
 
 
 // Burnie's Pixel Burn — Phantom + Token UI
