@@ -11,7 +11,7 @@ declare global {
 const GRID_SIZE = 100; // 100x100 = 10,000 squares
 const PIXEL_COST_TOKENS = 10000;
 const MAX_SQUARES = 25;
-const TOKEN_MINT = "YOUR_TOKEN_MINT_ADDRESS_HERE";
+const TOKEN_MINT = "DXrz89vHegFQndREph3HTLy2V5RXGus6TJhuvi9Xpump";
 const BURN_ADDRESS = "11111111111111111111111111111111";
 const COLORS = ["bg-pink-500", "bg-yellow-400", "bg-purple-400", "bg-blue-400", "bg-red-400"];
 
