@@ -1,3 +1,5 @@
+import "../global"; // ensures global.d.ts is loaded during build
+
 // Burnie's Pixel Burn — Phantom + Token UI
 
 import { useEffect, useState } from "react";
