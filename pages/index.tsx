@@ -31,7 +31,8 @@ export default function PixelGrid() {
 
   const connectWallet = async () => {
     try {
-      const response = await (window as any).solana.connect();
+      const provider = (window as any).solana;
+      const response = await provider.connect();
       setWallet(response.publicKey.toString());
     } catch (err) {
       console.error("Wallet connection failed", err);
