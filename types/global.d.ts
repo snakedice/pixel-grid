@@ -1,8 +1,14 @@
-// types/global.d.ts
 export {};
 
 declare global {
   interface Window {
-    solana?: any;
+    solana?: {
+      isPhantom?: boolean;
+      publicKey?: {
+        toString(): string;
+      };
+      connect: () => Promise<{ publicKey: { toString(): string } }>;
+      on: (event: string, handler: (...args: any[]) => void) => void;
+    };
   }
 }
