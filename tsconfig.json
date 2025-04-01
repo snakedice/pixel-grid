@@ -1,35 +1,21 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "jsx": "preserve",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
+    "target": "es2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
     "incremental": true,
-    "allowJs": true,
-    "types": [
-      "react",
-      "react-dom"
-    ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ]
+    "types": ["./global"]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "solana.d.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "global.d.ts"],
+  "exclude": ["node_modules"]
 }
