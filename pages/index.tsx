@@ -1,6 +1,6 @@
 // Burnie's Pixel Burn — Phantom + Token UI
 
-import "./styles/globals.css;"
+import "styles/globals.css;"
 import { useEffect, useState } from "react";
 import { Connection, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
 import { getAssociatedTokenAddress, createTransferInstruction } from "@solana/spl-token";
