@@ -2,11 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-declare global {
-  interface Window {
-    solana?: any;
-  }
-}
 
 const GRID_SIZE = 100; // 100x100 = 10,000 squares
 const PIXEL_COST_TOKENS = 10000;
