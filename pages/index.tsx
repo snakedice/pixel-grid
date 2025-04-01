@@ -27,7 +27,7 @@ export default function PixelGrid() {
     if (typeof window !== "undefined" && window.solana?.isPhantom) {
       window.solana.on("connect", () => {
         setWallet(window.solana.publicKey.toString());
-        fetchBalance(window.solana.publicKey);
+        fetchBalance(new PublicKey(window.solana.publicKey.toString()));
       });
     }
   }, []);
@@ -36,7 +36,7 @@ export default function PixelGrid() {
     try {
       const response = await window.solana.connect();
       setWallet(response.publicKey.toString());
-      fetchBalance(response.publicKey);
+      fetchBalance(new PublicKey(response.publicKey.toString()));
     } catch (err) {
       console.error("Wallet connection failed", err);
     }
@@ -50,8 +50,15 @@ export default function PixelGrid() {
       let total = 0;
       for (const acct of accounts.value) {
         const data = await connection.getParsedAccountInfo(acct.pubkey);
-        const parsed = data.value?.data?.parsed?.info?.tokenAmount?.uiAmount;
-        total += parsed || 0;
+        const parsedData = data.value?.data;
+        if (
+          parsedData &&
+          typeof parsedData === "object" &&
+          "parsed" in parsedData &&
+          parsedData.parsed?.info?.tokenAmount?.uiAmount
+        ) {
+          total += parsedData.parsed.info.tokenAmount.uiAmount;
+        }
       }
       setBalance(total);
     } catch (err) {
@@ -70,7 +77,7 @@ export default function PixelGrid() {
     }
 
     const provider = window.solana;
-    const fromPubkey = provider.publicKey;
+    const fromPubkey = new PublicKey(provider.publicKey.toString());
     const associatedAddress = await getAssociatedTokenAddress(TOKEN_MINT, fromPubkey);
 
     const totalCost = selected.length * PIXEL_COST_TOKENS;
@@ -93,8 +100,9 @@ export default function PixelGrid() {
       });
 
       const tx = new Transaction().add(burnIx, devIx);
-      const sig = await provider.signAndSendTransaction(tx);
-      await connection.confirmTransaction(sig);
+      const signedTx = await provider.signTransaction(tx);
+      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction(signature);
 
       setOwned([...owned, ...selected]);
       setSelected([]);
