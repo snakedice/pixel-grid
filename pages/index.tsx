@@ -1,4 +1,4 @@
-import "../global"; // ensures global.d.ts is loaded during build
+import "../types/solana"; // ✅ This forces Vercel to load your type definition
 
 // Burnie's Pixel Burn — Phantom + Token UI
 

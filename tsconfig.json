@@ -14,7 +14,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": ["./global"]
+    "types": ["./types/solana"]
   },
   "include": [
     "next-env.d.ts",
