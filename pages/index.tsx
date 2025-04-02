@@ -143,5 +143,76 @@ export default function Home() {
     return sum + DEV_FEE_PER_PIXEL_SOL + (landmark?.premium || 0);
   }, 0);
 
-  // ... (the rest of the component remains unchanged)
+  return (
+    <main className={`${darkMode ? 'bg-black text-white' : 'bg-white text-black'} min-h-screen flex flex-col items-center p-4`}>
+      <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 w-full max-w-4xl">
+        <div className="flex items-center gap-4">
+          <Image src={BurnieLogo} alt="Burnie the Snake Logo" width={60} height={60} />
+          <div>
+            <h1 className="text-3xl font-bold text-yellow-400">🔥 Burnie's Pixel Burn</h1>
+            <p className="text-sm">Use $PXB to burn your way into Solana history — one pixel at a time.</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setMode(mode === 'mobile' ? 'desktop' : 'mobile')} className="px-2 py-1 border rounded">{mode === 'mobile' ? 'Switch to Desktop View' : 'Switch to Mobile View'}</button>
+          <button onClick={() => setDarkMode(!darkMode)} className="px-2 py-1 border rounded">{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
+        </div>
+      </header>
+
+      <div className="mb-4">
+        {wallet ? (
+          <p>Connected: {wallet.toString()}</p>
+        ) : (
+          <button onClick={connectWallet} className="px-4 py-2 bg-yellow-500 text-black font-bold rounded shadow-md hover:bg-yellow-400">Connect Wallet</button>
+        )}
+      </div>
+
+      <div className="flex gap-4 mb-4">
+        <select value={selectedColor} onChange={e => setSelectedColor(e.target.value)} className="text-black px-2">
+          <option value="purple">purple</option>
+          <option value="red">red</option>
+          <option value="green">green</option>
+          <option value="blue">blue</option>
+          <option value="black">black</option>
+          <option value="pink">pink</option>
+        </select>
+        <input type="text" placeholder="https://x.com/yourhandle" value={username} onChange={e => setUsername(e.target.value)} className="px-2 border rounded text-black" />
+      </div>
+
+      <p className="mb-2">Selected: {selectedPixels.length} — Total Cost: {totalSOL.toFixed(3)} SOL + $PXB burn</p>
+      <button onClick={handleBurn} disabled={selectedPixels.length === 0 || !wallet} className="mb-4 px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50">Burn Tokens & Buy</button>
+
+      <div className="overflow-auto border border-gray-400 mb-6">
+        <div className="grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${GRID_WIDTH}, 10px)` }}>
+          {grid.flatMap((rowArray, rowIdx) =>
+            rowArray.map((_, colIdx) => {
+              const key = `${rowIdx},${colIdx}`;
+              const selected = selectedPixels.find(p => p.key === key);
+              const landmark = isInLandmark(rowIdx, colIdx);
+              const pixelColor = selected ? selected.color : landmark ? landmark.color : 'white';
+              const border = landmark ? '1px solid black' : '1px solid #ccc';
+              const cost = (DEV_FEE_PER_PIXEL_SOL + (landmark?.premium || 0)).toFixed(3);
+              const title = `${landmark ? landmark.name + ' — ' : ''}${cost} SOL`;
+              const content = selected && selected.username ? <a href={selected.username} target="_blank" rel="noopener noreferrer">&nbsp;</a> : null;
+              return (
+                <div key={key} onClick={() => togglePixel(rowIdx, colIdx)} style={{ backgroundColor: pixelColor, border, width: '10px', height: '10px' }} title={title}>{content}</div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <div className="text-center max-w-xl text-sm text-gray-300 mb-4">
+        <p>PixelBurn is an experiment on Solana where users can purchase pixels in exchange for burning $PXB tokens and paying a small dev fee. Users can link their X account to each pixel(s). Future functionality will include NFT's linked to the pixels, games, and more.</p>
+        <div className="flex gap-4 justify-center mt-2">
+          <a href="https://x.com/greatswyckoff" target="_blank" className="underline">Follow us on X</a>
+          <a href="https://t.me/pixelburnsol" target="_blank" className="underline">Join PixelBurn TG Community</a>
+        </div>
+      </div>
+
+      <footer className="mt-10 text-sm text-gray-400 text-center">
+        <p>©2025 Burnie’s Pixel Burn — Powered by <a className="underline" href="https://snakedice.com" target="_blank">SnakeDice DAO</a> — <a href="https://x.com/snakedicedao" className="underline" target="_blank">Follow SnakeDice on X</a></p>
+      </footer>
+    </main>
+  );
 }
