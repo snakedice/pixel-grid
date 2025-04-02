@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import BurnieLogo from '../public/burnie-logo.png';
-import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
-import { getAssociatedTokenAddress, createTransferInstruction } from '@solana/spl-token';
+import type { Signer } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, SystemProgram, } from '@solana/web3.js';
+import {
+  getOrCreateAssociatedTokenAccount,
+  createTransferInstruction,
+  TOKEN_PROGRAM_ID
+} from '@solana/spl-token';
 
 const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
 const DEV_FEE_PER_PIXEL_SOL = 0.005;
@@ -127,20 +132,37 @@ export default function Home() {
         lamports: Math.round(devFee * 1e9),
       }));
 
-      const userTokenAccount = await getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, wallet);
+      const provider = window.solana;
+      if (!provider) {
+        alert('Solana provider not found. Please install Phantom Wallet.');
+        return;
+      }
+      
+      const userTokenAccountInfo = await getOrCreateAssociatedTokenAccount(
+        connection,
+        provider as unknown as Signer,
+        TOKEN_MINT_ADDRESS,
+        wallet,
+        true
+      );
+      
+
       const tokenTransferInstruction = createTransferInstruction(
-        userTokenAccount,
+        userTokenAccountInfo.address,
         DEV_WALLET_ADDRESS,
         wallet,
-        selectedPixels.length * TOKEN_BURN_PER_PIXEL
+        selectedPixels.length * TOKEN_BURN_PER_PIXEL,
+        [],
+        TOKEN_PROGRAM_ID
       );
+
       tx.add(tokenTransferInstruction);
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
       tx.feePayer = wallet;
 
-      const signed = await window.solana!.signTransaction(tx);
+      const signed = await window.solana.signTransaction(tx);
       const txid = await connection.sendRawTransaction(signed.serialize());
       await connection.confirmTransaction({ signature: txid, blockhash, lastValidBlockHeight }, 'confirmed');
 
