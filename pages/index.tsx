@@ -48,7 +48,6 @@ export default function Home() {
   const [selectedColor, setSelectedColor] = useState<string>('purple');
   const [username, setUsername] = useState<string>('');
   const [grid, setGrid] = useState<Array<Array<null>>>(Array(GRID_HEIGHT).fill(null).map(() => Array(GRID_WIDTH).fill(null)));
-  const [mode, setMode] = useState<string>('mobile');
   const [darkMode, setDarkMode] = useState<boolean>(true);
 
   useEffect(() => {
@@ -148,11 +147,18 @@ export default function Home() {
 
   return (
     <main className={`${darkMode ? 'bg-black text-white' : 'bg-white text-black'} min-h-screen flex flex-col items-center p-4`}>
-      <header className="flex items-center gap-4 mb-6">
-        <Image src={BurnieLogo} alt="Burnie the Snake Logo" width={60} height={60} />
-        <div>
-          <h1 className="text-3xl font-bold text-yellow-400">🔥 Burnie's Pixel Burn</h1>
-          <p className="text-sm">Use $PXB to burn your way into Solana history — one pixel at a time.</p>
+      <header className="flex items-center gap-4 mb-6 w-full justify-between">
+        <div className="flex items-center gap-4">
+          <Image src={BurnieLogo} alt="Burnie the Snake Logo" width={60} height={60} />
+          <div>
+            <h1 className="text-3xl font-bold text-yellow-400">🔥 Burnie's Pixel Burn</h1>
+            <p className="text-sm">Use $PXB to burn your way into Solana history — one pixel at a time.</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setDarkMode(!darkMode)} className="px-2 py-1 border rounded">
+            {darkMode ? 'Light Mode' : 'Dark Mode'}
+          </button>
         </div>
       </header>
 
