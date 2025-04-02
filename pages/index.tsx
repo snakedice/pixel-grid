@@ -61,7 +61,7 @@ export default function Home() {
   const connectWallet = async () => {
     try {
       if (window.solana) {
-        const response = await window.solana.connect();
+        const response = await window.solana.connect({ onlyIfTrusted: false });
         setWallet(response.publicKey);
       }
     } catch (err: any) {
