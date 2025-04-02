@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import BurnieLogo from '../public/burnie-logo.png';
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { getAssociatedTokenAddress, createTransferInstruction } from '@solana/spl-token';
 
 const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
 const DEV_FEE_PER_PIXEL_SOL = 0.005;
@@ -10,7 +11,6 @@ const EXTRA_FEE_PER_LARGE_LANDMARK = 0.05;
 const GRID_WIDTH = 30;
 const GRID_HEIGHT = 100;
 const TOKEN_BURN_PER_PIXEL = 10000;
-const TOKEN_BURN_ADDRESS = new PublicKey('11111111111111111111111111111111');
 const DEV_WALLET_ADDRESS = new PublicKey('GuvMYgVSFHBV3UgaAd8rnb23ofzZqUBJP3r8zBbundyC');
 const TOKEN_MINT_ADDRESS = new PublicKey('DXrz89vHegFQndREph3HTLy2V5RXGus6TJhuvi9Xpump');
 
@@ -61,7 +61,7 @@ export default function Home() {
   const connectWallet = async () => {
     try {
       if (window.solana) {
-        const response = await window.solana.connect({ onlyIfTrusted: false });
+        const response = await window.solana.connect();
         setWallet(response.publicKey);
       }
     } catch (err: any) {
@@ -109,6 +109,7 @@ export default function Home() {
   const handleBurn = async () => {
     if (!wallet || selectedPixels.length === 0) return;
     const connection = new Connection(SOLANA_RPC);
+
     let devFee = selectedPixels.length * DEV_FEE_PER_PIXEL_SOL;
     selectedPixels.forEach(({ row, col }) => {
       const landmark = isInLandmark(row, col);
@@ -118,24 +119,36 @@ export default function Home() {
     });
 
     const tx = new Transaction();
-    tx.add(SystemProgram.transfer({
-      fromPubkey: wallet,
-      toPubkey: DEV_WALLET_ADDRESS,
-      lamports: devFee * 1e9,
-    }));
-    tx.add(SystemProgram.transfer({
-      fromPubkey: wallet,
-      toPubkey: TOKEN_BURN_ADDRESS,
-      lamports: 0,
-    }));
 
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.feePayer = wallet;
-    const signed = await window.solana!.signTransaction(tx);
-    const txid = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction({ signature: txid, blockhash, lastValidBlockHeight }, 'confirmed');
-    alert('Transaction sent! Check Solana explorer.');
+    try {
+      tx.add(SystemProgram.transfer({
+        fromPubkey: wallet,
+        toPubkey: DEV_WALLET_ADDRESS,
+        lamports: Math.round(devFee * 1e9),
+      }));
+
+      const userTokenAccount = await getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, wallet);
+      const tokenTransferInstruction = createTransferInstruction(
+        userTokenAccount,
+        DEV_WALLET_ADDRESS,
+        wallet,
+        selectedPixels.length * TOKEN_BURN_PER_PIXEL
+      );
+      tx.add(tokenTransferInstruction);
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = wallet;
+
+      const signed = await window.solana!.signTransaction(tx);
+      const txid = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction({ signature: txid, blockhash, lastValidBlockHeight }, 'confirmed');
+
+      alert('Transaction sent! Check Solana explorer.');
+    } catch (err) {
+      console.error('Transaction error:', err);
+      alert('Error during transaction. See console.');
+    }
   };
 
   const totalSOL = selectedPixels.reduce((sum, { row, col }) => {
