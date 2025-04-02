@@ -162,7 +162,7 @@ export default function Home() {
       tx.recentBlockhash = blockhash;
       tx.feePayer = wallet;
 
-      const signed = await window.solana.signTransaction(tx);
+      const signed = await provider.signTransaction(tx);
       const txid = await connection.sendRawTransaction(signed.serialize());
       await connection.confirmTransaction({ signature: txid, blockhash, lastValidBlockHeight }, 'confirmed');
 
