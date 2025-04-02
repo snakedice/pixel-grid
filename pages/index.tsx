@@ -5,17 +5,18 @@ import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.
 
 const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
 const DEV_FEE_PER_PIXEL_SOL = 0.005;
-const EXTRA_FEE_PER_SMALL_LANDMARK = 0.2;
-const EXTRA_FEE_PER_LARGE_LANDMARK = 0.5;
+const EXTRA_FEE_PER_SMALL_LANDMARK = 0.02;
+const EXTRA_FEE_PER_LARGE_LANDMARK = 0.05;
 const GRID_WIDTH = 30;
 const GRID_HEIGHT = 100;
+const TOKEN_BURN_PER_PIXEL = 10000;
 const TOKEN_BURN_ADDRESS = new PublicKey('11111111111111111111111111111111');
 const DEV_WALLET_ADDRESS = new PublicKey('GuvMYgVSFHBV3UgaAd8rnb23ofzZqUBJP3r8zBbundyC');
 const TOKEN_MINT_ADDRESS = new PublicKey('DXrz89vHegFQndREph3HTLy2V5RXGus6TJhuvi9Xpump');
 
 const LANDMARKS = [
-  { name: 'City Hall', top: 40, left: 10, width: 10, height: 10, color: 'gold', premium: EXTRA_FEE_PER_LARGE_LANDMARK },
-  { name: 'Casino', top: 70, left: 5, width: 10, height: 10, color: 'purple', premium: EXTRA_FEE_PER_LARGE_LANDMARK },
+  { name: 'City Hall', top: 40, left: 10, width: 10, height: 10, color: 'goldenrod', premium: EXTRA_FEE_PER_LARGE_LANDMARK },
+  { name: 'Casino', top: 70, left: 5, width: 10, height: 10, color: 'violet', premium: EXTRA_FEE_PER_LARGE_LANDMARK },
   { name: 'Mansion 1', top: 5, left: 2, width: 5, height: 5, color: 'lightblue', premium: EXTRA_FEE_PER_SMALL_LANDMARK },
   { name: 'Mansion 2', top: 5, left: 23, width: 5, height: 5, color: 'lightblue', premium: EXTRA_FEE_PER_SMALL_LANDMARK },
   { name: 'Mansion 3', top: 15, left: 2, width: 5, height: 5, color: 'lightblue', premium: EXTRA_FEE_PER_SMALL_LANDMARK },
@@ -143,21 +144,19 @@ export default function Home() {
     return sum + DEV_FEE_PER_PIXEL_SOL + (landmark?.premium || 0);
   }, 0);
 
+  const totalPXB = selectedPixels.length * TOKEN_BURN_PER_PIXEL;
+
   return (
     <main className={`${darkMode ? 'bg-black text-white' : 'bg-white text-black'} min-h-screen flex flex-col items-center p-4`}>
-      <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 w-full max-w-4xl">
-        <div className="flex items-center gap-4">
-          <Image src={BurnieLogo} alt="Burnie the Snake Logo" width={60} height={60} />
-          <div>
-            <h1 className="text-3xl font-bold text-yellow-400">🔥 Burnie's Pixel Burn</h1>
-            <p className="text-sm">Use $PXB to burn your way into Solana history — one pixel at a time.</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setMode(mode === 'mobile' ? 'desktop' : 'mobile')} className="px-2 py-1 border rounded">{mode === 'mobile' ? 'Switch to Desktop View' : 'Switch to Mobile View'}</button>
-          <button onClick={() => setDarkMode(!darkMode)} className="px-2 py-1 border rounded">{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
+      <header className="flex items-center gap-4 mb-6">
+        <Image src={BurnieLogo} alt="Burnie the Snake Logo" width={60} height={60} />
+        <div>
+          <h1 className="text-3xl font-bold text-yellow-400">🔥 Burnie's Pixel Burn</h1>
+          <p className="text-sm">Use $PXB to burn your way into Solana history — one pixel at a time.</p>
         </div>
       </header>
+
+      <p className="mb-2 text-lg font-medium">Total Cost: {totalSOL.toFixed(3)} SOL + {totalPXB.toLocaleString()} $PXB</p>
 
       <div className="mb-4">
         {wallet ? (
@@ -169,17 +168,26 @@ export default function Home() {
 
       <div className="flex gap-4 mb-4">
         <select value={selectedColor} onChange={e => setSelectedColor(e.target.value)} className="text-black px-2">
-          <option value="purple">purple</option>
-          <option value="red">red</option>
-          <option value="green">green</option>
-          <option value="blue">blue</option>
-          <option value="black">black</option>
-          <option value="pink">pink</option>
+          <option value="purple">Purple</option>
+          <option value="red">Red</option>
+          <option value="green">Green</option>
+          <option value="blue">Blue</option>
+          <option value="black">Black</option>
+          <option value="pink">Pink</option>
+          <option value="orange">Orange</option>
+          <option value="yellow">Yellow</option>
+          <option value="teal">Teal</option>
+          <option value="brown">Brown</option>
         </select>
-        <input type="text" placeholder="https://x.com/yourhandle" value={username} onChange={e => setUsername(e.target.value)} className="px-2 border rounded text-black" />
+        <input
+          type="text"
+          placeholder="x username"
+          value={username}
+          onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+          className="px-2 border rounded text-black"
+        />
       </div>
 
-      <p className="mb-2">Selected: {selectedPixels.length} — Total Cost: {totalSOL.toFixed(3)} SOL + $PXB burn</p>
       <button onClick={handleBurn} disabled={selectedPixels.length === 0 || !wallet} className="mb-4 px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50">Burn Tokens & Buy</button>
 
       <div className="overflow-auto border border-gray-400 mb-6">
@@ -193,9 +201,16 @@ export default function Home() {
               const border = landmark ? '1px solid black' : '1px solid #ccc';
               const cost = (DEV_FEE_PER_PIXEL_SOL + (landmark?.premium || 0)).toFixed(3);
               const title = `${landmark ? landmark.name + ' — ' : ''}${cost} SOL`;
-              const content = selected && selected.username ? <a href={selected.username} target="_blank" rel="noopener noreferrer">&nbsp;</a> : null;
+              const href = selected?.username ? `https://x.com/${selected.username}` : undefined;
               return (
-                <div key={key} onClick={() => togglePixel(rowIdx, colIdx)} style={{ backgroundColor: pixelColor, border, width: '10px', height: '10px' }} title={title}>{content}</div>
+                <div
+                  key={key}
+                  onClick={() => togglePixel(rowIdx, colIdx)}
+                  style={{ backgroundColor: pixelColor, border, width: '10px', height: '10px' }}
+                  title={title}
+                >
+                  {href && <a href={href} target="_blank" rel="noopener noreferrer">&nbsp;</a>}
+                </div>
               );
             })
           )}
