@@ -9,7 +9,7 @@ import {
   TOKEN_PROGRAM_ID
 } from '@solana/spl-token';
 
-const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
+const SOLANA_RPC = 'https://mainnet.helius-rpc.com/?api-key=d333ef46-1784-4259-9c59-906f0c9335a1';
 const DEV_FEE_PER_PIXEL_SOL = 0.005;
 const EXTRA_FEE_PER_SMALL_LANDMARK = 0.02;
 const EXTRA_FEE_PER_LARGE_LANDMARK = 0.05;
